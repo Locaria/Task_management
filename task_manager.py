@@ -22,6 +22,7 @@ def login():
         if team_name in users_db and users_db[team_name]['password'] == hash_password(password):
             st.session_state['team'] = team_name
             st.session_state['logged_in'] = True
+            st.session_state['current_project'] = None
         else:
             st.sidebar.error("Invalid team name or password")
 
@@ -39,6 +40,7 @@ def create_project():
         if project_name not in users_db[st.session_state['team']]['projects']:
             users_db[st.session_state['team']]['projects'][project_name] = {'todo': [], 'in_progress': [], 'done': []}
             st.success(f"Project '{project_name}' created!")
+            st.session_state['current_project'] = project_name
         else:
             st.error(f"Project '{project_name}' already exists!")
 
@@ -90,16 +92,22 @@ def main():
         st.sidebar.title("Menu")
         st.sidebar.button("Logout", on_click=logout)
         
-        create_project()
-        
         team_projects = users_db[st.session_state['team']]['projects']
         
-        if team_projects:
-            project_name = st.selectbox("Select Project", list(team_projects.keys()))
-            add_task(project_name)
-            show_kanban(project_name)
+        if st.sidebar.button("Create New Project"):
+            st.session_state['current_project'] = None
+        
+        if st.session_state['current_project']:
+            add_task(st.session_state['current_project'])
+            show_kanban(st.session_state['current_project'])
         else:
-            st.write("No projects yet. Create a new project.")
+            create_project()
+        
+        if team_projects:
+            project_name = st.sidebar.selectbox("Select Project", list(team_projects.keys()))
+            if project_name:
+                st.session_state['current_project'] = project_name
+        
     else:
         login()
 
